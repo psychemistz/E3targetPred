@@ -82,29 +82,33 @@ def MCSim(LVs, Gaps, lmd, num_Trials, E3_features, Sub_features, Pair_features, 
                 
                 ## Calculate Outputs
                 y_train_pred, X_train_pred = model.predict(Xin_train,batch_size=1800, verbose=0)
+                y_train_score = y_train_pred[:,1]
                 y_train_pred = to_categorical(y_train_pred.argmax(axis=1))
                 MSE_X_train_pred = (np.square(X_train_pred - Xout_train)).mean(axis=1)
                 
                 y_val_pred, X_val_pred = model.predict(Xin_val,batch_size=200, verbose=0)
+                y_val_score = y_val_pred[:,1]
                 y_val_pred = to_categorical(y_val_pred.argmax(axis=1))
                 MSE_X_val_pred = (np.square(X_val_pred - Xout_val)).mean(axis=1)
                 
                 y_test_pred, X_test_pred = model.predict(Xin_test,batch_size=200, verbose=0)
+                y_test_score = y_test_pred[:,1]
                 y_test_pred = to_categorical(y_test_pred.argmax(axis=1))
                 MSE_X_test_pred = (np.square(X_test_pred - Xout_test)).mean(axis=1)
                 
                 ## Performance Measures
-                tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc = Calculate_Stats(y_train,y_train_pred);
-                v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc = Calculate_Stats(y_val,y_val_pred);
-                t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc = Calculate_Stats(y_test,y_test_pred);
+                tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, tr_aupr = Calculate_Stats(y_train,y_train_pred, y_train_score);
+                v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, v_aupr = Calculate_Stats(y_val,y_val_pred, y_val_score);
+                t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, t_aupr = Calculate_Stats(y_test,y_test_pred, y_test_score);
 
                 ## Save Measures for later analysis
-                Stats.append([tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, -10*np.log10(MSE_X_train_pred.mean()),
-                              v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, -10*np.log10(MSE_X_val_pred.mean()),
-                              t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, -10*np.log10(MSE_X_test_pred.mean())])
+                Stats.append([tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, tr_aupr, -10*np.log10(MSE_X_train_pred.mean()),
+                              v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, v_aupr, -10*np.log10(MSE_X_val_pred.mean()),
+                              t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, t_aupr,-10*np.log10(MSE_X_test_pred.mean())])
+
                 
                 ## Print performance messages
-                print('CKSAAP-Gap:',gap, 'LV=',LV,'Trial:',loop_ind, 'Test Youden-index:', t_yi, 'MCC:', t_mcc, 'AUC:', t_auc, 'MSE (dB):', -10*np.log10(MSE_X_test_pred.mean()))
+                print('CKSAAP-Gap:',gap, 'LV=',LV,'Trial:',loop_ind, 'Valid / Test Youden-index:', v_yi,'/',t_yi, 'MCC:', t_mcc, 'AUC:', t_auc, 'AUPR:', t_aupr, 'MSE (dB):', -10*np.log10(MSE_X_test_pred.mean()))
                 ## End of single trial
             
             ## save all trials
@@ -113,9 +117,9 @@ def MCSim(LVs, Gaps, lmd, num_Trials, E3_features, Sub_features, Pair_features, 
             savemat(filename,{'Statistics':Statistics})
                 
         ## Show Classification/Reconstruction Statistics for given LV and gap
-        Show_Statistics('Training Results (MEAN)',Statistics.mean(axis=0)[0:9])
-        Show_Statistics('Validation Results (MEAN)',Statistics.mean(axis=0)[9:18])
-        Show_Statistics('Test Results (MEAN)',Statistics.mean(axis=0)[18:27])
+        Show_Statistics('Training Results (MEAN)',Statistics.mean(axis=0)[0:10])
+        Show_Statistics('Validation Results (MEAN)',Statistics.mean(axis=0)[10:20])
+        Show_Statistics('Test Results (MEAN)',Statistics.mean(axis=0)[20:30])
             
     end = time.time()
     print(end-start)
@@ -160,29 +164,32 @@ def Train_LSE(LV, Gap, lmd, E3_features, Sub_features, Pair_features, target_lab
     
     ## Calculate Outputs
     y_train_pred, X_train_pred = model.predict(Xin_train,batch_size=1800, verbose=0)
+    y_train_score = y_train_pred[:,1]
     y_train_pred = to_categorical(y_train_pred.argmax(axis=1))
     MSE_X_train_pred = (np.square(X_train_pred - Xout_train)).mean(axis=1)
     
     y_val_pred, X_val_pred = model.predict(Xin_val,batch_size=200, verbose=0)
+    y_val_score = y_val_pred[:,1]
     y_val_pred = to_categorical(y_val_pred.argmax(axis=1))
     MSE_X_val_pred = (np.square(X_val_pred - Xout_val)).mean(axis=1)
     
     y_test_pred, X_test_pred = model.predict(Xin_test,batch_size=200, verbose=0)
+    y_test_score = y_test_pred[:,1]
     y_test_pred = to_categorical(y_test_pred.argmax(axis=1))
     MSE_X_test_pred = (np.square(X_test_pred - Xout_test)).mean(axis=1)
     
     ## Performance Measures
-    tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc = Calculate_Stats(y_train,y_train_pred);
-    v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc = Calculate_Stats(y_val,y_val_pred);
-    t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc = Calculate_Stats(y_test,y_test_pred);
+    tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, tr_aupr = Calculate_Stats(y_train,y_train_pred, y_train_score);
+    v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, v_aupr = Calculate_Stats(y_val,y_val_pred, y_val_score);
+    t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, t_aupr = Calculate_Stats(y_test,y_test_pred, y_test_score);
 
     ## Save Measures for later analysis
-    Stats.append([tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, -10*np.log10(MSE_X_train_pred.mean()),
-                  v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, -10*np.log10(MSE_X_val_pred.mean()),
-                  t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, -10*np.log10(MSE_X_test_pred.mean())])
+    Stats.append([tr_acc, tr_sen, tr_spe, tr_f1, tr_mcc, tr_bacc, tr_yi, tr_auc, tr_aupr, -10*np.log10(MSE_X_train_pred.mean()),
+                  v_acc, v_sen, v_spe, v_f1, v_mcc, v_bacc, v_yi, v_auc, v_aupr, -10*np.log10(MSE_X_val_pred.mean()),
+                  t_acc, t_sen, t_spe, t_f1, t_mcc, t_bacc, t_yi, t_auc, t_aupr,-10*np.log10(MSE_X_test_pred.mean())])
     
     ## Print performance messages
-    print('CKSAAP-Gap:',Gap, 'LV=',LV, 'Test Youden-index:', t_yi, 'MCC:', t_mcc, 'AUC:', t_auc, 'MSE (dB):', -10*np.log10(MSE_X_test_pred.mean()))
+    print('CKSAAP-Gap:',gap, 'LV=',LV,'Trial:',loop_ind, 'Valid / Test Youden-index:', v_yi,'/',t_yi, 'MCC:', t_mcc, 'AUC:', t_auc, 'AUPR:', t_aupr, 'MSE (dB):', -10*np.log10(MSE_X_test_pred.mean()))
     ## End of single trial
     
     ## save all trials
