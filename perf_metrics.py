@@ -42,5 +42,6 @@ def Show_Statistics(msg,Stats):
     print('Balance Accuracy:',Stats[5])
     print('Youden-Index:',Stats[6])
     print('AUC:',Stats[7])  
-    print('Reconstruction MSE:',Stats[8])
+    print('AUPR:',Stats[8])  
+    print('Reconstruction MSE:',Stats[9])
     print(70*'-')
